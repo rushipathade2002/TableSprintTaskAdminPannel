@@ -3,55 +3,66 @@ import { Link, useNavigate,  } from 'react-router-dom';
 import axios from 'axios';
 import { Sidebar } from '../components/Sidebar';
 import './SubCategory.css';
+import { toast } from "react-toastify";
 import { FaUserCircle, FaTrashAlt, FaEdit } from 'react-icons/fa';
 import LogoutModal from '../components/LogoutModal';
+import { useAuth } from './store/Auth';
 
 
 
 export const SubCategory = () => {
   const history = useNavigate();
+  const {  authorizationToken } = useAuth();
   const [subCategories, setSubCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteId, setDeleteId] = useState(null);
+  const URL = "http://localhost:5000/"
 
-  useEffect(() => {
-    axios.get('/api/subcategories')
-      .then(response => {
-        if (Array.isArray(response.data)) {
-            setSubCategories(response.data);
-          } else {
-            setSubCategories([]);  // Handle case where response data is not an array
-          }
-          setLoading(false);
-        // setSubCategories(response.data);
-      })
-      .catch(error => {
-        console.error("There was an error fetching the subcategory data!", error);
-        setLoading(false);
-      });
-  }, []);
+
+  useEffect(()=>{
+        getAllSubCategories();
+    },[]);
+
+    const getAllSubCategories = async()=>{
+        const response = await fetch("http://localhost:5000/api/admin/subCategories", {
+                method:"GET",
+                headers:{
+                    "Content-Type":"application/json",
+                    Authorization : authorizationToken
+                },
+            });
+
+            const data = await response.json();
+              if(response.ok){
+                setSubCategories(data); 
+              }
+                setLoading(false)
+              
+    }
 
   const toggleLogoutModal = () => {
     setShowLogoutModal(!showLogoutModal);
   };
 
-  const toggleDeleteModal = (id) => {
-    setDeleteId(id);
-    setShowDeleteModal(!showDeleteModal);
-  };
 
-  const deleteSubCategory = () => {
-    axios.delete(`/api/subcategories/${deleteId}`)
-      .then(() => {
-        setSubCategories(subCategories.filter(subCategory => subCategory.id !== deleteId));
-        toggleDeleteModal(null);
-      })
-      .catch(error => {
-        console.error("There was an error deleting the subcategory!", error);
-      });
-  };
+  const deleteSubCategory=async (id)=>{
+    try {
+      const response = await fetch(`http://localhost:5000/api/admin/subcategory/delete/${id}`,{
+            method:"DELETE",
+            headers:{
+                    "Content-Type":"application/json",
+                    authorization:authorizationToken,
+                    }
+            });
+            if(!response.success) {
+                  toast.error(response.message);
+                }
+                getAllSubCategories();
+                toast.success("Deleted Sub-Category Successfully");                                   
+    } catch (error) {
+        console.log(error);
+    }
+  }
 
 
   return (
@@ -66,6 +77,7 @@ export const SubCategory = () => {
           </div>
         </header>
         <div className="content">
+          <div className="container">
           <div className="subcategory-page">
             <div className="container-fluid">
                 <div className="row">
@@ -101,17 +113,31 @@ export const SubCategory = () => {
                       <td colSpan="7" style={{"textAlign":"center","padding":"10px 0px 50px 0px ", "fontWeight":"bold"}}>No Data Found</td>
                     </tr>
                     ) : (
-                subCategories.map(subCategory => (
-                  <tr key={subCategory.id}>
-                    <td>{subCategory.id}</td>
-                    <td>{subCategory.name}</td>
+                subCategories.map((subCategory, index) => (
+                  <tr key={index}>
+                    <td>{index+1}</td>
+                    <td>{subCategory.subCategoryName}</td>
                     <td>{subCategory.categoryName}</td>
-                    <td><img src={subCategory.image} alt={subCategory.name} className="subcategory-image" /></td>
-                    <td className={subCategory.status === 'Active' ? 'status-active' : 'status-inactive'}>{subCategory.status}</td>
-                    <td>{subCategory.sequence}</td>
                     <td>
-                      <FaEdit className="edit-icon" onClick={() => history(`/edit-subcategory/${subCategory.id}`)} />
-                      <FaTrashAlt className="delete-icon" onClick={() => toggleDeleteModal(subCategory.id)} />
+                          {subCategory.image ? (
+                            <img src={`${URL}${subCategory.image}`} alt={subCategory.subCategoryName} className="category-image" />
+                          ) : (
+                            "No Image"
+                          )}
+                    </td>
+                    <td className={subCategory.status === 'Active' ? 'status-active' : 'status-inactive'}>{subCategory.status}</td>
+                    <td>{subCategory.subCategorySequence}</td>
+                    <td>
+                        <button className="action-btn btn-success" onClick={() => history(`/edit-subCategory/${subCategory._id}`)}>
+                            <FaEdit />
+                        </button>
+                        <button className="btn btn-danger" 
+                                    onClick={()=>{
+                                        if(window.confirm("Are you sure you want to Delete")){
+                                                  deleteSubCategory(subCategory._id);    
+                                    }
+                              } }> <FaTrashAlt />
+                        </button>
                     </td>
                   </tr>
                             )   )
@@ -122,20 +148,11 @@ export const SubCategory = () => {
             </table>
           </div>
         </div>
-      </div>
-      {showLogoutModal && <LogoutModal toggleModal={toggleLogoutModal} />}
-      {showDeleteModal && (
-        <div className="delete-modal-overlay">
-          <div className="delete-modal">
-            <h2>Delete</h2>
-            <p>Are you sure you want to delete?</p>
-            <div className="delete-modal-buttons">
-              <button onClick={() => toggleDeleteModal(null)} className="cancel-button">Cancel</button>
-              <button onClick={deleteSubCategory} className="confirm-button">Delete</button>
-            </div>
-          </div>
         </div>
-      )}
+      </div>
+
+      {showLogoutModal && <LogoutModal toggleModal={toggleLogoutModal} />}
+      
     </div>
     </>
   );

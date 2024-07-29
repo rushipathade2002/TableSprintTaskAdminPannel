@@ -40,8 +40,7 @@ const getAllCategories = async()=>{
           if(response.ok){
             setCategories(data); 
           }
-            setLoading(false)
-          
+            setLoading(false)    
 }
 
     const deleteCategory=async (id)=>{

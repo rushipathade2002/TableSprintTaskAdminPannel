@@ -1,8 +1,9 @@
 .subcategory-page {
     background: white;
-    width: 90%;
+    width: 100%;
     position: relative;
-    bottom: 170px;
+    /* top: 200px; */
+    bottom: 100px;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);

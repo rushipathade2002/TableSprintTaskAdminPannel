@@ -1,41 +1,87 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './AddSubCategory.css';
 import { FaUserCircle } from 'react-icons/fa';
 import { Sidebar } from '../components/Sidebar';
-import logo from "../assets/imges/logo.jpg";
 import LogoutModal from '../components/LogoutModal';
+import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from './store/Auth';
+
 
 
 export const AddProduct = () => {
-  const [category, setCategory] = useState('');
-  const [subCategoryName, setSubCategoryName] = useState('');
-  const [productName, setProductName] = useState('');
-  const [image, setImage] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+  const [imagePreview, setImagePreview] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const { authorizationToken } = useAuth();
+  const navigate = useNavigate();
+  const [product, setProduct] = useState({
+    categoryName:"",
+    subCategoryName:"",
+    productName:"",
+    status:"Active",
+    image:""
+  });
 
 
   const toggleLogoutModal = () => {
     setShowLogoutModal(!showLogoutModal);
   };
 
+  const handleInputChange = (e) => (
+    setProduct({
+      ...product,
+      [e.target.name]: e.target.value
+    })
+  );
+
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setImage(URL.createObjectURL(file));
+      setImagePreview(URL.createObjectURL(file));
+      setProduct({
+        ...product,
+        image: file,
+      });
     }
   };
+  useEffect(()=>{
+        getAllSubCategories();
+        getAllCategories();
+    },[]);
+
+    const getAllSubCategories = async()=>{
+        const response = await fetch("http://localhost:5000/api/admin/subCategories", {
+                method:"GET",
+                headers:{
+                    "Content-Type":"application/json",
+                    Authorization : authorizationToken
+                },
+            });
+            const data = await response.json();
+              if(response.ok){
+                setSubCategories(data); 
+              }              
+    }
+
+    const getAllCategories = async()=>{
+      const response = await fetch("http://localhost:5000/api/admin/categories", {
+             method:"GET",
+             headers:{
+                 "Content-Type":"application/json",
+                 Authorization : authorizationToken
+             },
+         });
+         const data = await response.json();
+           if(response.ok){
+             setCategories(data); 
+           }           
+ }
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const formData = new FormData();
-    formData.append('category', category);
-    formData.append('subCategoryName', subCategoryName);
-    formData.append('subCategorySequence', subCategorySequence);
-    if (image) {
-      formData.append('image', image);
-    }
-
-    console.log(formData);
+    
 
     // API call to save the category
     // axios.post('/api/categories', formData)
@@ -63,62 +109,102 @@ export const AddProduct = () => {
                 <form onSubmit={handleSubmit}>
                 <div className="row">
                     <div className="col-md-12">
-                        <h2>Add Sub Category</h2>
+                        <h2> Add Sub Category </h2>
                     </div>
                     <div className="col-md-12"></div>
                     <div className="col-md-6">
-                        <div className="form-group">
-                        <label>Category</label>
-                        <select value={category} onChange={(e) => setCategory(e.target.value)}>
-                            <option value="">Select Category Name</option>
-                            <option value="Ghee & Oil">Ghee & Oil</option>
-                            <option value="Tea">Tea</option>
-                            {/* Add more options as needed */}
-                        </select>
-                        </div>
+                    <div className="form-group">
+                      <label>Category</label>
+                      <select
+                        id="Category"
+                        name="categoryName"
+                        value={product.categoryName}
+                        onChange={handleInputChange}
+                      >
+                        <option value="">Select Category Name</option>
+                        {
+                          categories.length === 0 ? (
+                            <option value="">Category Not Found</option>
+                          ) : (
+                            categories.map((category, index) => (
+                              <option value={category.categoryName} key={index}>{category.categoryName}</option>
+                            ))
+                          )
+                        }
+                      </select>
                     </div>
+                  </div>
+
+
+                  <div className="col-md-6">
+                    <div className="form-group">
+                      <label>Sub Category</label>
+                      <select
+                        id="Category"
+                        name="categoryName"
+                        value={product.categoryName}
+                        onChange={handleInputChange}
+                      >
+                        <option value="">Select Category Name</option>
+                        {
+                          subCategories.length === 0 ? (
+                            <option value="">Category Not Found</option>
+                          ) : (
+                            subCategories.map((subCategory, index) => (
+                              <option value={subCategory.categoryName} key={index}>{subCategory.categoryName}</option>
+                            ))
+                          )
+                        }
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="col-md-6">
+                    <div className="form-group">
+                      <label htmlFor="productName">Product Name</label>
+                      <input
+                        type="text"
+                        placeholder="Enter Product Name"
+                        id="productName"
+                        name='productName'
+                        value={product.productName}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="col-md-6">
+                    <div className="form-group">
+                      <label htmlFor="status">Status</label>
+                      <select
+                        id="status"
+                        name="status"
+                        value={product.status}
+                        onChange={handleInputChange}
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                      </select>
+                    </div>
+                  </div>
 
                     <div className="col-md-6">
-                        <div className="form-group">
-                        <label>Sub Category</label>
-                        <select value={subCategoryName} onChange={(e) => setSubCategoryName(e.target.value)}>
-                            <option value="">Select Sub-Category Name</option>
-                            <option value="Ghee & Oil">Ghee & Oil</option>
-                            <option value="Tea">Tea</option>
-                            {/* Add more options as needed */}
-                        </select>
-                        </div>
+                    <div className="form-group">
+                      <label htmlFor="imageUpload">Upload Image</label>
+                      <input
+                        type="file"
+                        id="imageUpload"
+                        name="image"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        required
+                      />
                     </div>
-
-                    <div className="col-md-6">
-                        <div className="form-group">
-                        <label>Project name</label>
-                        <input
-                            type="text"
-                            placeholder="Enter Product Name"
-                            value={productName}
-                            onChange={(e) => setProductName(e.target.value)}
-                        />
-                        </div>
-                    </div>
-
-                    
-
-                    <div className="col-md-3">
-                        <div className="form-group">
-                            <label htmlFor="imageUpload">Upload Image</label>
-                            <input
-                            type="file"
-                            id="imageUpload"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            />
-                        </div>
-                        </div>
-                        <div className="col-md-3">
-                            <h5>Upload Image</h5>
-                            {image && <img src={image} alt="Category Preview" className="image-preview" />}
-                        </div>
+                  </div>
+                  <div className="col-md-6">
+                      {imagePreview && <img src={imagePreview} alt="SubCategory Preview" className="image-preview w-100" />}
+                  </div>
 
                     <div className="form-buttons">
                         <button type="button" className="cancel-button" onClick={() => window.history.back()}>Cancel</button>

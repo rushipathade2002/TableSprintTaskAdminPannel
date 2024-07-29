@@ -1,5 +1,5 @@
 const User = require("../models/user_model");
-const Contact = require("../models/contact_model");
+const SubCategory = require("../models/subCategory-model");
 const Category = require("../models/category-model");
 
 const getAllCategory = async (req, res , next)=>{
@@ -13,6 +13,19 @@ const getAllCategory = async (req, res , next)=>{
         console.log(error);
         next(error);
         
+    }
+}
+
+const getAllSubCategory = async(req, res, next)=>{
+    try {
+        const subCategories = await SubCategory.find({});
+        if(!subCategories || subCategories.length === 0 ){
+            res.status(404).send({message:"categories not Found"});
+        }
+        res.status(200).json(subCategories)
+    } catch (error) {
+        next(error)
+        console.log(error);
     }
 }
 
@@ -59,7 +72,40 @@ const updateCategoryById = async (req, res) => {
       res.status(500).json({ message: 'Internal server error' });
     }
   };
-  
+
+
+
+//   subcategory 
+const addSubCategory = async(req, res)=>{
+    try {
+        const { categoryName, subCategoryName, subCategorySequence, status } = req.body;
+        let image = '';
+
+        if (req.file) {
+        image = `uploads/${req.file.filename}`;
+        }
+
+        const newSubCategory = {
+            categoryName,
+            subCategoryName,
+            subCategorySequence,
+            status,
+            image
+        };
+
+        const addedSubCategory = await SubCategory.create(newSubCategory);
+
+        if (addedSubCategory) {
+        res.status(201).json({ message: "Sub-Category added successfully", subCategory: addedSubCategory });
+        } else {
+        res.status(400).json({ message: "Failed to add sub-category" });
+        }
+      } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: 'Error adding subcategory' });
+      }
+}
+
 
 const getAllContacts = async (req, res )=>{
     try {
@@ -92,7 +138,17 @@ const deleteCategoryById= async(req, res)=>{
         const id = req.params.id;
         await Category.deleteOne({_id:id})
         res.status(200).json({message: "Category Deleted Successfully"});
+    } catch (error) {
+        // next(error);
+        console.error(error)
+    }
+}
 
+const deleteSubCategoryById = async(req, res)=>{
+    try {
+        const id = req.params.id;
+        await SubCategory.deleteOne({_id:id})
+        res.status(200).json({message: "SubCategory Deleted Successfully"});
     } catch (error) {
         // next(error);
         console.error(error)
@@ -102,12 +158,17 @@ const deleteCategoryById= async(req, res)=>{
 
 
 
+
+
 module.exports = {
     getAllCategory, 
+    getAllSubCategory,
     getAllContacts,
     getCategoryById,
     updateCategoryById, 
     deleteContactByID, 
     deleteCategoryById,
-    addCategory
+    addCategory,
+    addSubCategory,
+    deleteSubCategoryById
 };

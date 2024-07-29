@@ -1,49 +1,101 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './AddSubCategory.css';
 import { FaUserCircle } from 'react-icons/fa';
 import { Sidebar } from '../components/Sidebar';
-import logo from "../assets/imges/logo.jpg";
-
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from './store/Auth';
+import LogoutModal from '../components/LogoutModal';
+import { toast } from 'react-toastify';
+import axios from 'axios';
 
 export const AddSubCategory = () => {
-  const [category, setCategory] = useState('');
-  const [subCategoryName, setSubCategoryName] = useState('');
-  const [subCategorySequence, setSubCategorySequence] = useState('');
-  const [image, setImage] = useState(null);
+  const [subCategory, setSubCategory] = useState({
+    categoryName: "",
+    subCategoryName: "",
+    subCategorySequence: "",
+    status: "Active",
+    image: ""
+  });
+
+  const [categories, setCategories] = useState([]);
+  const { authorizationToken } = useAuth();
+  const navigate = useNavigate();
+  const [imagePreview, setImagePreview] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
+  useEffect(() => {
+    getAllCategories();
+  }, []);
 
-  const toggleLogoutModal = () => {
-    setShowLogoutModal(!showLogoutModal);
+  const getAllCategories = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/admin/categories", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: authorizationToken
+        },
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setCategories(data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
+
+  const handleInputChange = (e) => (
+    setSubCategory({
+      ...subCategory,
+      [e.target.name]: e.target.value
+    })
+  );
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setImage(URL.createObjectURL(file));
+      setImagePreview(URL.createObjectURL(file));
+      setSubCategory({
+        ...subCategory,
+        image: file,
+      });
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData();
-    formData.append('category', category);
-    formData.append('subCategoryName', subCategoryName);
-    formData.append('subCategorySequence', subCategorySequence);
-    if (image) {
-      formData.append('image', image);
+    try {
+      const response = await axios.post("http://localhost:5000/api/admin/save-subcategory",subCategory, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: authorizationToken
+      }
+      });
+  
+      const res_data = await response.data;
+      if (response.status == '201') {
+        toast.success("Subcategory added successfully");
+        setSubCategory({
+          categoryName: "",
+          subCategoryName: "",
+          subCategorySequence: "",
+          status: "Active",
+          image: ""
+        });
+        setImagePreview(null);
+        navigate("/subcategory");
+      } else {
+        toast.error(res_data.message || "Add failed");
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("An error occurred while adding the subcategory");
     }
+  };
 
-    console.log(formData);
-
-    // API call to save the category
-    // axios.post('/api/categories', formData)
-    //   .then(response => {
-    //     // Handle success
-    //   })
-    //   .catch(error => {
-    //     // Handle error
-    //   });
+  const toggleLogoutModal = () => {
+    setShowLogoutModal(!showLogoutModal);
   };
 
   return (
@@ -57,85 +109,95 @@ export const AddSubCategory = () => {
           </div>
         </header>
         <div className="content">
-        <div className="add-sub-category-container">
+          <div className="add-sub-category-page">
             <div className="container">
-                <form onSubmit={handleSubmit}>
+              <form onSubmit={handleSubmit} className="add-sub-category-form" encType="multipart/form-data">
                 <div className="row">
-                    <div className="col-md-12">
-                        <h2>Add Sub Category</h2>
-                    </div>
-                    <div className="col-md-12"></div>
-                    <div className="col-md-6">
-                        <div className="form-group">
-                        <label>Category</label>
-                        <select value={category} onChange={(e) => setCategory(e.target.value)}>
-                            <option value="">Select Category Name</option>
-                            <option value="Ghee & Oil">Ghee & Oil</option>
-                            <option value="Tea">Tea</option>
-                            {/* Add more options as needed */}
-                        </select>
-                        </div>
-                    </div>
+                  <div className="col-md-12">
+                    <h2>Add Sub Category</h2>
+                  </div>
 
-                    <div className="col-md-6">
-                        <div className="form-group">
-                        <label>Sub category name</label>
-                        <input
-                            type="text"
-                            placeholder="Enter Sub Category Name"
-                            value={subCategoryName}
-                            onChange={(e) => setSubCategoryName(e.target.value)}
-                        />
-                        </div>
+                  <div className="col-md-6">
+                    <div className="form-group">
+                      <label>Category</label>
+                      <select
+                        id="Category"
+                        name="categoryName"
+                        value={subCategory.categoryName}
+                        onChange={handleInputChange}
+                      >
+                        <option value="">Select Category Name</option>
+                        {
+                          categories.length === 0 ? (
+                            <option value="">Category Not Found</option>
+                          ) : (
+                            categories.map((category, index) => (
+                              <option value={category.categoryName} key={index}>{category.categoryName}</option>
+                            ))
+                          )
+                        }
+                      </select>
                     </div>
+                  </div>
 
-                    <div className="col-md-6">
-                        <div className="form-group">
-                        <label>Sub Category Sequence</label>
-                        <input
-                            type="number"
-                            placeholder="Enter Sequence"
-                            value={subCategorySequence}
-                            onChange={(e) => setSubCategorySequence(e.target.value)}
-                        />
-                        </div>
+                  <div className="col-md-6">
+                    <div className="form-group">
+                      <label htmlFor="subCategoryName">Sub Category Name</label>
+                      <input
+                        type="text"
+                        id="subCategoryName"
+                        name='subCategoryName'
+                        value={subCategory.subCategoryName}
+                        onChange={handleInputChange}
+                        required
+                      />
                     </div>
+                  </div>
 
-                    <div className="col-md-3">
-                        <div className="form-group">
-                            <label htmlFor="imageUpload">Upload Image</label>
-                            <input
-                            type="file"
-                            id="imageUpload"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            />
-                        </div>
-                        </div>
-                        <div className="col-md-3"><br />
-                            <h5>Upload Image</h5>
-                            {image && <img src={image} alt="Category Preview" className="image-preview" />}
+                  <div className="col-md-6">
+                    <div className="form-group">
+                      <label>Sub Category Sequence</label>
+                      <input
+                        type="number"
+                        id="subCategorySequence"
+                        name='subCategorySequence'
+                        value={subCategory.subCategorySequence}
+                        onChange={handleInputChange}
+                        required
+                      />
                     </div>
+                  </div>
 
-                    <div className="form-buttons">
-                        <button type="button" className="cancel-button" onClick={() => window.history.back()}>Cancel</button>
-                        <button type="submit" className="save-button">Save</button>
+                  <div className="col-md-3">
+                    <div className="form-group">
+                      <label htmlFor="imageUpload">Upload Image</label>
+                      <input
+                        type="file"
+                        id="imageUpload"
+                        name="image"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        required
+                      />
                     </div>
+                  </div>
+                  <div className="col-md-3">
+                      {imagePreview && <img src={imagePreview} alt="SubCategory Preview" className="image-preview w-100" />}
+                  </div>
+
+                  <div className="col-md-12">
+                    <div className="form-actions">
+                      <button type="button" className="cancel-button" onClick={() => window.history.back()}>Cancel</button>
+                      <button type="submit" className="save-button">Save</button>
+                    </div>
+                  </div>
                 </div>
-
-
-            </form>
+              </form>
             </div>
-                
-                
-                
-                
-        </div>
+          </div>
         </div>
       </div>
       {showLogoutModal && <LogoutModal toggleModal={toggleLogoutModal} />}
     </div>
   );
 };
-
-
