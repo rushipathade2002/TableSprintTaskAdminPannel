@@ -1,7 +1,10 @@
 const express = require("express");
 const multer = require("multer");
 const path = require("path");
-const {getAllCategory,getAllSubCategory,getAllContacts, getCategoryById,updateCategoryById, deleteContactByID, deleteCategoryById, deleteSubCategoryById, addCategory, addSubCategory } = require("../controllers/admin-controller");
+const { getAllCategory,getAllSubCategory, getAllProducts, addProduct, getProductById, 
+    getCategoryById, updateCategoryById, getSubCategoryById, deleteProductById, 
+    deleteCategoryById, deleteSubCategoryById, addCategory, addSubCategory, 
+    updateProductById, updateSubCategoryById } = require("../controllers/admin-controller");
 const authMiddleware = require("../middlewares/auth-middleware");
 const adminMiddleware = require("../middlewares/admin-middleware");
 
@@ -22,6 +25,7 @@ const upload = multer({
 })
 
 
+
 // Category API
 router.route("/save-category").post(authMiddleware,adminMiddleware, upload.single('image'), addCategory);
 router.route("/categories").get(authMiddleware,adminMiddleware,  getAllCategory);
@@ -34,13 +38,20 @@ router.route("/category/update/:id").patch(authMiddleware,adminMiddleware,upload
 // SubCategory API
 router.route("/save-subcategory").post(authMiddleware,adminMiddleware, upload.single('image'), addSubCategory);
 router.route("/subCategories").get(authMiddleware,adminMiddleware,  getAllSubCategory);
-router.route("/subcategory/delete/:id").delete(authMiddleware, adminMiddleware, deleteSubCategoryById)
+router.route("/subcategory/delete/:id").delete(authMiddleware, adminMiddleware, deleteSubCategoryById);
+router.route("/subCategory/:id").get(authMiddleware, adminMiddleware, getSubCategoryById );
+router.route("/subCategory/update/:id").patch(authMiddleware, adminMiddleware, upload.single('image'), updateSubCategoryById);
 
-router.route("/contacts").get(authMiddleware,adminMiddleware, getAllContacts);
+
+// Product API
+router.route("/save-product").post(authMiddleware,adminMiddleware,upload.single('image'), addProduct);
+router.route("/products").get(authMiddleware,adminMiddleware,  getAllProducts);
+router.route("/product/delete/:id").delete(authMiddleware, adminMiddleware, deleteProductById);
+router.route("/product/:id").get(authMiddleware, adminMiddleware, getProductById);
+router.route("/product/update/:id").patch(authMiddleware, adminMiddleware, upload.single('image'), updateProductById);
 
 
 
-router.route("/contact/delete/:id").delete(authMiddleware,adminMiddleware, deleteContactByID);
 
 
 module.exports = router;

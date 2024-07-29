@@ -6,6 +6,7 @@ import LogoutModal from '../components/LogoutModal';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './store/Auth';
+import axios from 'axios';
 
 
 
@@ -21,7 +22,7 @@ export const AddProduct = () => {
     subCategoryName:"",
     productName:"",
     status:"Active",
-    image:""
+    image:"",
   });
 
 
@@ -79,18 +80,37 @@ export const AddProduct = () => {
            }           
  }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    console.log(product);
+    try {
+      const response = await axios.post("http://localhost:5000/api/admin/save-product",product, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: authorizationToken
+      }
+      });
+  
+      const res_data = await response.data;
+      if (response.status == '201') {
+        toast.success("Product added successfully");
+        setProduct({
+          categoryName:"",
+          subCategoryName:"",
+          productName:"",
+          status:"Active",
+          image:"",
+        });
+        setImagePreview(null);
+        navigate("/products");
+      } else {
+        toast.error(res_data.message || "Add failed");
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("An error occurred while adding the subcategory");
+    }
 
-    // API call to save the category
-    // axios.post('/api/categories', formData)
-    //   .then(response => {
-    //     // Handle success
-    //   })
-    //   .catch(error => {
-    //     // Handle error
-    //   });
   };
 
   return (
@@ -109,7 +129,7 @@ export const AddProduct = () => {
                 <form onSubmit={handleSubmit}>
                 <div className="row">
                     <div className="col-md-12">
-                        <h2> Add Sub Category </h2>
+                        <h2> Add Product </h2>
                     </div>
                     <div className="col-md-12"></div>
                     <div className="col-md-6">
@@ -141,17 +161,17 @@ export const AddProduct = () => {
                       <label>Sub Category</label>
                       <select
                         id="Category"
-                        name="categoryName"
-                        value={product.categoryName}
+                        name="subCategoryName"
+                        value={product.subCategoryName}
                         onChange={handleInputChange}
                       >
-                        <option value="">Select Category Name</option>
+                        <option value="">Select Sub-Category Name</option>
                         {
                           subCategories.length === 0 ? (
-                            <option value="">Category Not Found</option>
+                            <option value="">Sub-Category Not Found</option>
                           ) : (
                             subCategories.map((subCategory, index) => (
-                              <option value={subCategory.categoryName} key={index}>{subCategory.categoryName}</option>
+                              <option value={subCategory.subCategoryName} key={index}>{subCategory.subCategoryName}</option>
                             ))
                           )
                         }
@@ -189,7 +209,7 @@ export const AddProduct = () => {
                     </div>
                   </div>
 
-                    <div className="col-md-6">
+                    <div className="col-md-8">
                     <div className="form-group">
                       <label htmlFor="imageUpload">Upload Image</label>
                       <input
@@ -202,7 +222,7 @@ export const AddProduct = () => {
                       />
                     </div>
                   </div>
-                  <div className="col-md-6">
+                  <div className="col-md-4">
                       {imagePreview && <img src={imagePreview} alt="SubCategory Preview" className="image-preview w-100" />}
                   </div>
 

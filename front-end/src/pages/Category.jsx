@@ -52,7 +52,7 @@ const getAllCategories = async()=>{
                       authorization:authorizationToken,
                       }
                   });
-              if(!response.success) {
+              if(!response.success){
                     toast.error(response.message);
                   }
                   getAllCategories();

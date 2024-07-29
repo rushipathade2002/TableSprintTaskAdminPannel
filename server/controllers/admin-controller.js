@@ -1,6 +1,7 @@
 const User = require("../models/user_model");
 const SubCategory = require("../models/subCategory-model");
 const Category = require("../models/category-model");
+const Product = require("../models/product-model");
 
 const getAllCategory = async (req, res , next)=>{
     try {
@@ -48,7 +49,6 @@ const getCategoryById = async (req, res) => {
     try {
         const id = req.params.id;
         const data = await Category.findOne({_id:id});
-        console.log(data)
         if(!data){
             res.status(404).send({message:"Category not Found"});
         }
@@ -57,6 +57,21 @@ const getCategoryById = async (req, res) => {
         res.status(404).json({message: error.message});
     }
 }
+
+const getSubCategoryById = async (req, res) => {
+    try {
+      const id = req.params.id;
+      const data = await SubCategory.findById(id);
+      if (!data) {
+        return res.status(404).send({ message: "Category not Found" });
+      }
+      return res.status(200).json(data);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: error.message });
+    }
+  };
+
 
 const updateCategoryById = async (req, res) => {
     try {
@@ -74,17 +89,48 @@ const updateCategoryById = async (req, res) => {
   };
 
 
+  const updateProductById = async (req, res) => {
+    try {
+      const id = req.params.id;
+      const userData = req.body;
+      if (req.file) {
+        userData.image = `uploads/${req.file.filename}`;
+      }
+      const updateProduct = await Product.updateOne({ _id: id }, { $set: userData });
+      return res.status(200).json({ message: 'Product updated successfully', updateProduct });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  };
+
+  
+
+  const updateSubCategoryById = async (req, res) => {
+    try {
+      const id = req.params.id;
+      const userData = req.body;
+      if (req.file) {
+        userData.image = `uploads/${req.file.filename}`;
+      }
+      const updatedSubCategory = await SubCategory.findByIdAndUpdate(id, userData, { new: true });
+      return res.status(200).json({ message: 'Subcategory updated successfully', updatedSubCategory });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  };
+  
+
 
 //   subcategory 
 const addSubCategory = async(req, res)=>{
     try {
         const { categoryName, subCategoryName, subCategorySequence, status } = req.body;
         let image = '';
-
         if (req.file) {
         image = `uploads/${req.file.filename}`;
         }
-
         const newSubCategory = {
             categoryName,
             subCategoryName,
@@ -92,9 +138,7 @@ const addSubCategory = async(req, res)=>{
             status,
             image
         };
-
         const addedSubCategory = await SubCategory.create(newSubCategory);
-
         if (addedSubCategory) {
         res.status(201).json({ message: "Sub-Category added successfully", subCategory: addedSubCategory });
         } else {
@@ -107,32 +151,73 @@ const addSubCategory = async(req, res)=>{
 }
 
 
-const getAllContacts = async (req, res )=>{
+// Product
+const addProduct = async(req, res)=>{
     try {
-        const contacts = await Contact.find();
-        console.log(contacts)
-        if(!contacts || contacts.length === 0 ) {
-            res.status(404).send({message:"Contacts not Found"});
+        const { categoryName, subCategoryName, productName, status } = req.body;
+        let image = '';
+        if (req.file) {
+            image = `uploads/${req.file.filename}`;
         }
-        res.status(200).json(contacts)
+        const newProduct = {
+            categoryName,
+            subCategoryName,
+            productName,
+            status,
+            image
+        };
+        const addedProduct = await Product.create(newProduct);
+        if (addedProduct) {
+        res.status(201).json({ message: "Product added successfully", data: addedProduct });
+        } else {
+        res.status(400).json({ message: "Failed to add Product" });
+        }
+      } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: 'Error adding Product' });
+      }
+}
+
+
+// get all products
+const getAllProducts = async (req, res )=>{
+    try {
+        const Products = await Product.find({});
+        if(!Products || Products.length === 0 ){
+            res.status(404).send({message:"Product not Found"});
+        }
+        res.status(200).json(Products)
     } catch (error) {
         res.status(404).json({message: error.message});
     }
 }
 
-const deleteContactByID =async (req, res) => {
+const getProductById = async (req, res) => {
     try {
         const id = req.params.id;
-        await Contact.deleteOne({_id: id})
-        res.status(200).json({message: "Contact Deleted Successfully"});
+        const data = await Product.findOne({_id:id});
+        console.log(data)
+        if(!data){
+            res.status(404).send({message:"Product not Found"});
+        }
+        return res.status(200).json(data)
+    } catch (error) {
+        res.status(404).json({message: error.message});
+    }
+}
 
+const deleteProductById =async (req, res) => {
+    try {
+        const id = req.params.id;
+        await Product.deleteOne({_id: id})
+        res.status(200).json({message: "Product Deleted Successfully"});
     } catch (error) {
         // next(error);
         console.error(error)
     }
 }
 
-// user delete logic
+// Category delete logic
 const deleteCategoryById= async(req, res)=>{
     try {
         const id = req.params.id;
@@ -162,13 +247,18 @@ const deleteSubCategoryById = async(req, res)=>{
 
 module.exports = {
     getAllCategory, 
+    getAllProducts,
     getAllSubCategory,
-    getAllContacts,
     getCategoryById,
-    updateCategoryById, 
-    deleteContactByID, 
-    deleteCategoryById,
+    getProductById,
+    getSubCategoryById,
     addCategory,
     addSubCategory,
-    deleteSubCategoryById
+    addProduct,
+    deleteCategoryById,
+    deleteProductById, 
+    deleteSubCategoryById,
+    updateProductById,
+    updateCategoryById,
+    updateSubCategoryById 
 };

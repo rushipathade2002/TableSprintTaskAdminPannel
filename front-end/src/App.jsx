@@ -30,7 +30,6 @@ const App = ()=>{
           <Route path="/edit-product/:id" element={<EditProduct />} />
           <Route path="/add-subcategory" element={<AddSubCategory/>}/>
           <Route path="/add-product" element={<AddProduct/>}/>
-
           <Route path="/products" element={<Products />} />
           <Route path="/logout" element={<Logout/>} />
           <Route path="*" element={<ErrorPage />} />

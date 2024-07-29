@@ -3,42 +3,63 @@ import axios from 'axios';
 import { FaEdit, FaTrashAlt, FaUserCircle } from 'react-icons/fa';
 import { Sidebar } from '../components/Sidebar';
 import LogoutModal from '../components/LogoutModal';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from "react-toastify";
+import { useAuth } from './store/Auth';
+
 
 export const Products = () => {
+  const {  authorizationToken } = useAuth();
+  const navigate = useNavigate();
   const [product, setProduct] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const URL = "http://localhost:5000/"
+
 
   const toggleLogoutModal = () => {
     setShowLogoutModal(!showLogoutModal);
   };
 
-  useEffect(() => {
-    axios.get('/api/products')
-      .then(response => {
-        if (Array.isArray(response.data)) {
-          setProduct(response.data);
-        } else {
-          setProduct([]);  // Handle case where response data is not an array
-        }
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error("There was an error fetching the Product!", error);
-        setLoading(false);
-      });
-  }, []);
+  useEffect(()=>{
+    getAllProducts();
+  },[]);
 
-  const handleDelete = (id) => {
-    axios.delete(`/api/product/${id}`)
-      .then(response => {
-        setProduct(product.filter(product => product.id !== id));
-      })
-      .catch(error => {
-        console.error("There was an error deleting the product!", error);
-      });
-  };
+const getAllProducts = async()=>{
+     const response = await fetch("http://localhost:5000/api/admin/products", {
+            method:"GET",
+            headers:{
+                "Content-Type":"application/json",
+                Authorization : authorizationToken
+            },
+        });
+
+        const data = await response.json();
+          if(response.ok){
+            setProduct(data); 
+          }
+            setLoading(false)    
+}
+
+
+    const deleteProduct=async (id)=>{
+      try {
+        const response = await fetch(`http://localhost:5000/api/admin/product/delete/${id}`,{
+              method:"DELETE",
+              headers:{
+                      "Content-Type":"application/json",
+                      authorization:authorizationToken,
+                      }
+                  });
+              if(!response.success) {
+                    toast.error(response.message);
+                  }
+                  getAllProducts();
+                  toast.success("Deleted Product Successfully");                                   
+      } catch (error) {
+          console.log(error);
+      }
+    }
 
   return (
     <div className="app">
@@ -53,7 +74,7 @@ export const Products = () => {
         <div className="content">
           <div className="category-page">
             <div className="header1">
-              <h2>Category</h2>
+              <h2>Product</h2>
               <Link to="/add-product" className='add-category'>Add Product</Link>
             </div>
             <table className="category-table">
@@ -78,21 +99,26 @@ export const Products = () => {
                     <td colSpan="6" style={{"textAlign":"center","padding":"10px 0px 50px 0px ", "fontWeight":"bold"}}>No Data Found</td>
                   </tr>
                   ) : (
-                    product.map(products => (
-                    <tr key={products.id}>
-                      <td>{products.id}</td>
-                      <td>{products.name}</td>
-                      <td>{products.subCategory}</td>
-                      <td>{products.category}</td>
+                    product.map((products,index) => (
+                    <tr key={index}>
+                      <td>{index+1}</td>
+                      <td>{products.productName}</td>
+                      <td>{products.subCategoryName}</td>
+                      <td>{products.categoryName}</td>
                       <td className={products.status === 'Active' ? 'status-active' : 'status-inactive'}>{products.status}</td>
                       <td>
-                        <button className="action-btn">
-                          <FaEdit />
-                        </button>
-                        <button className="action-btn" onClick={() => handleDelete(products.id)}>
-                          <FaTrashAlt />
-                        </button>
+                          <button className="btn btn-success ml-1" onClick={() => navigate(`/edit-product/${products._id}`)}>
+                              <FaEdit />
+                          </button>
+                          <button className="btn btn-danger ml-3" 
+                                      onClick={()=>{
+                                          if(window.confirm("Are you sure you want to Delete")){
+                                                    deleteProduct(products._id);    
+                                      }
+                                } }> <FaTrashAlt />
+                          </button>
                       </td>
+                      
                     </tr>
                   ))
                 ))}
