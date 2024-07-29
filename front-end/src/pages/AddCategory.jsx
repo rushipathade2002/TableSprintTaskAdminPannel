@@ -46,14 +46,6 @@ export const AddCategory = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // const formData = new FormData();
-    // formData.append('categoryName', category.categoryName);
-    // formData.append('categorySequence', category.categorySequence);
-    // if (image) {
-    //   formData.append('image', category.image);
-    // }
-    console.log(category)
-
     // API call to save the category
         const response = await axios.post("http://localhost:5000/api/admin/save-category", category, {
             headers: {
@@ -61,9 +53,7 @@ export const AddCategory = () => {
                 Authorization: authorizationToken
             }
         });
-
         const res_data = response.data;
-        console.log(res_data)
         if( response.status == '201' ){
             toast.success("Category Added successful");
             setCategory({
@@ -73,7 +63,6 @@ export const AddCategory = () => {
               image:""
             })
             navigate("/category")
-            // window.location.reload();
         }else{
             toast.error(res_data.extraDetails ? res_data.extraDetails : res_data.message);
         }
@@ -136,6 +125,7 @@ export const AddCategory = () => {
                     id="imageUpload"
                     name='image'
                     accept="image/*"
+                    required
                     onChange={handleImageUpload}
                     />
                   </div>

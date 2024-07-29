@@ -2,10 +2,9 @@ const User = require("../models/user_model");
 const Contact = require("../models/contact_model");
 const Category = require("../models/category-model");
 
-const getAllCategory = async (req, res )=>{
+const getAllCategory = async (req, res , next)=>{
     try {
         const categories = await Category.find({});
-        console.log(categories)
         if(!categories || categories.length === 0 ) {
             res.status(404).send({message:"categories not Found"});
         }
@@ -13,6 +12,7 @@ const getAllCategory = async (req, res )=>{
     } catch (error) {
         console.log(error);
         next(error);
+        
     }
 }
 
@@ -20,7 +20,7 @@ const getAllCategory = async (req, res )=>{
 const addCategory = async (req, res)=>{
     try {
         const { categoryName, categorySequence, status } = req.body;
-        const image = req.file.filename;
+        const image = `uploads/${req.file.filename}`;
         const addedCategory = await Category.create({ categoryName, categorySequence,status, image });
         if(addedCategory){
             res.status(201).json({message:"Category Added successfully",Category:addedCategory});
@@ -31,13 +31,13 @@ const addCategory = async (req, res)=>{
 }
 
 
-const getUserById = async (req, res) => {
+const getCategoryById = async (req, res) => {
     try {
         const id = req.params.id;
-        const data = await User.findOne({_id:id},{ password : 0 });
+        const data = await Category.findOne({_id:id});
         console.log(data)
         if(!data){
-            res.status(404).send({message:"User not Found"});
+            res.status(404).send({message:"Category not Found"});
         }
         return res.status(200).json(data)
     } catch (error) {
@@ -45,18 +45,21 @@ const getUserById = async (req, res) => {
     }
 }
 
-const updateUserById = async (req, res)=>{
-        try {
-            const id = req.params.id;
-            const userData = req.body;
-            console.log(userData);
-            const updateUser = await User.updateOne({_id:id},{$set:userData,});
-            return res.status(200).json({updateUser});
-        } catch (error) {
-            // next(error);
-            console.log(error)
-        }
-}
+const updateCategoryById = async (req, res) => {
+    try {
+      const id = req.params.id;
+      const userData = req.body;
+      if (req.file) {
+        userData.image = `uploads/${req.file.filename}`;
+      }
+      const updateCategory = await Category.updateOne({ _id: id }, { $set: userData });
+      return res.status(200).json({ message: 'Category updated successfully', updateCategory });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  };
+  
 
 const getAllContacts = async (req, res )=>{
     try {
@@ -89,7 +92,7 @@ const deleteCategoryById= async(req, res)=>{
         const id = req.params.id;
         await Category.deleteOne({_id:id})
         res.status(200).json({message: "Category Deleted Successfully"});
-        
+
     } catch (error) {
         // next(error);
         console.error(error)
@@ -102,8 +105,8 @@ const deleteCategoryById= async(req, res)=>{
 module.exports = {
     getAllCategory, 
     getAllContacts,
-    getUserById,
-    updateUserById, 
+    getCategoryById,
+    updateCategoryById, 
     deleteContactByID, 
     deleteCategoryById,
     addCategory

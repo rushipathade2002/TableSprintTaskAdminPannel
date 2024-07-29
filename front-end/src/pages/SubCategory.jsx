@@ -3,7 +3,6 @@ import { Link, useNavigate,  } from 'react-router-dom';
 import axios from 'axios';
 import { Sidebar } from '../components/Sidebar';
 import './SubCategory.css';
-import logo from "../assets/imges/logo.jpg";
 import { FaUserCircle, FaTrashAlt, FaEdit } from 'react-icons/fa';
 import LogoutModal from '../components/LogoutModal';
 

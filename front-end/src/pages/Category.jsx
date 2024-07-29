@@ -4,7 +4,9 @@ import { FaEdit, FaTrashAlt, FaUserCircle } from 'react-icons/fa';
 import { Sidebar } from '../components/Sidebar';
 import LogoutModal from '../components/LogoutModal';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from "react-toastify";
 import { useAuth } from './store/Auth';
+
 
 
 
@@ -14,7 +16,7 @@ export const Category = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const URL = "http://localhost:5000/uploads/"
+  const URL = "http://localhost:5000/"
   
   const toggleLogoutModal = () => {
     setShowLogoutModal(!showLogoutModal);
@@ -42,15 +44,25 @@ const getAllCategories = async()=>{
           
 }
 
-  const handleDelete = (id) => {
-    axios.delete(`/api/categories/${id}`)
-      .then(response => {
-        setCategories(categories.filter(category => category.id !== id));
-      })
-      .catch(error => {
-        console.error("There was an error deleting the category!", error);
-      });
-  };
+    const deleteCategory=async (id)=>{
+      try {
+        const response = await fetch(`http://localhost:5000/api/admin/category/delete/${id}`,{
+              method:"DELETE",
+              headers:{
+                      "Content-Type":"application/json",
+                      authorization:authorizationToken,
+                      }
+                  });
+              if(!response.success) {
+                    toast.error(response.message);
+                  }
+                  getAllCategories();
+                  toast.success("Deleted Category Successfully");                                   
+      } catch (error) {
+          console.log(error);
+      }
+    }
+
 
   return (
     <div className="app">
@@ -102,16 +114,20 @@ const getAllCategories = async()=>{
                             "No Image"
                           )}
                         </td>
-                      {/* <td><img src={`http://localhost:5000/uploads/${category.image}`} alt={category.categoryName} className="category-image" /></td> */}
+
                       <td className={category.status === 'Active' ? 'status-active' : 'status-inactive'}>{category.status}</td>
                       <td>{category.categorySequence}</td>
                       <td>
                           <button className="action-btn" onClick={() => navigate(`/edit-category/${category._id}`)}>
                             <FaEdit />
                           </button>
-                          <button className="action-btn" onClick={() => handleDelete(category._id)}>
-                            <FaTrashAlt />
+                          <button className="btn btn-danger" onClick={()=>{
+                                                        if(window.confirm("Are you sure you want to Delete")){
+                                                            deleteCategory(category._id);    
+                                                        }
+                                                    }}><FaTrashAlt />
                           </button>
+                          
                       </td>
                     </tr>
                   ))
@@ -122,6 +138,7 @@ const getAllCategories = async()=>{
         </div>
       </div>
       {showLogoutModal && <LogoutModal toggleModal={toggleLogoutModal} />}
+      
     </div>
   );
 };
